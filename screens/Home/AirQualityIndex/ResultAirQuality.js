@@ -6,7 +6,7 @@ import {
   ImageBackground,
   Dimensions,
   Alert,
-  Image,
+  ScrollView,
   TouchableOpacity,
 } from "react-native";
 import MapView, { Circle } from "react-native-maps";
@@ -20,57 +20,90 @@ const LONGITUDE_DELTA = LATITUDE_DELTA * (width / height);
 import { Asset } from "expo-asset";
 import RotatingImage from "../../../misc/RotatingScreen";
 import { auth, db } from "../../../firebaseConfig";
-import { collection,doc,addDoc } from "firebase/firestore";
+import { collection, doc, addDoc } from "firebase/firestore";
+import PollutionPieChart from "../../../misc/Piechart";
+import RNDateTimePicker from "@react-native-community/datetimepicker";
+
 const ResultAirQuality = ({ route }) => {
   const { location } = route.params;
-  const [aqiData, setAqiData] = useState(null);
+  const [aqiData, setAqiData] = useState();
   const [color, setColor] = useState(null);
   const [intense, setIntense] = useState(null);
   const [precautions, setPrecautions] = useState(null);
   const navigate = useNavigation();
   const [parameter, setParameter] = useState(null);
-  const [impacts,setImpacts]=useState(null);
-  const [precautionsair,setPrecautionsair]=useState(null);
-  
+  const [impacts, setImpacts] = useState(null);
+  const [precautionsair, setPrecautionsair] = useState(null);
+  const [maxpol, setMaxpol] = useState(null);
+  const [dataloaded, setDataloaded] = useState(false);
+  const [calendar, setCalendar] = useState(new Date());
+
   useEffect(() => {
     postDataToServer(location.coords.latitude, location.coords.longitude);
     Asset.loadAsync(require("../../../assets/Homebg.jpg"));
   }, []);
   useEffect(() => {
+    console.log(aqiData);
+    if (aqiData) {
+      console.log("data");
+      console.log(aqiData["pollution_parameters"]);
+      setDataloaded(true);
+    }
     const runCode = () => {
-      if (aqiData && aqiData.predictedresult !== null) {
-        const result = aqiData.predictedresult;
+      if (aqiData && aqiData["predicted_aqi"] !== null) {
+        const result = aqiData["predicted_aqi"];
 
         if (result >= 0 && result <= 50) {
           setColor("#013220");
           setIntense("Very Good");
-          setImpacts("Minimal Impact ")
-          setPrecautionsair("Air quality is acceptable")
+          setImpacts("Minimal Impact ");
+          setPrecautionsair("Air quality is acceptable");
         } else if (result >= 51 && result <= 100) {
           setColor("#90EE90");
           setIntense("Good");
-          setImpacts("May cause minor breathing discomfort to sensitive people")
-          setPrecautionsair("No specific precautions necessary for the general population")
+          setImpacts(
+            "May cause minor breathing discomfort to sensitive people"
+          );
+          setPrecautionsair(
+            "No specific precautions necessary for the general population"
+          );
         } else if (result >= 101 && result <= 200) {
           setColor("#FFA500");
           setIntense("Moderately Polluted");
-          setImpacts("May cause breathing discomfort to people with lung disease such as asthma, and discomfort to people with heart disease, children and older adults")
-          setPrecautionsair("Maintain good health practices: stay hydrated, eat a balanced diet, and consult a doctor if experiencing breathing difficulties or related symptoms")
+          setImpacts(
+            "May cause breathing discomfort to people with lung disease such as asthma, and discomfort to people with heart disease, children and older adults"
+          );
+          setPrecautionsair(
+            "Maintain good health practices: stay hydrated, eat a balanced diet, and consult a doctor if experiencing breathing difficulties or related symptoms"
+          );
         } else if (result >= 201 && result <= 300) {
           setColor("#FFFF00");
           setIntense("Poor");
-          setImpacts("May cause breathing discomfort to people on prolonged exposure, and discomfort to people with heart disease ")
-          setPrecautionsair("Wear masks if going outside")
+          setImpacts(
+            "May cause breathing discomfort to people on prolonged exposure, and discomfort to people with heart disease "
+          );
+          setPrecautionsair("Wear masks if going outside");
         } else if (result >= 301 && result <= 400) {
           setColor("#FF0000");
           setIntense("Very Poor");
-          setImpacts("May cause respiratory illness to the people on prolonged exposure")
-          setPrecautionsair("People with existing heart or respiratory illnesses, children, and elderly should limit outdoor exertion. Wear masks if going outside")
+          setImpacts(
+            "May cause respiratory illness to the people on prolonged exposure"
+          );
+          setPrecautionsair(
+            "People with existing heart or respiratory illnesses, children, and elderly should limit outdoor exertion. Wear masks if going outside"
+          );
         }
-
-        const parameterEffect = aqiData["parameterEffect"][1];
+        const max = Object.keys(aqiData["pollution_parameters"]).reduce(
+          (a, b) =>
+            aqiData["pollution_parameters"][a] >
+            aqiData["pollution_parameters"][b]
+              ? a
+              : b
+        );
+        const parameterEffect = max;
+        setMaxpol(max);
         if (parameterEffect && parameterEffect.length > 1) {
-          const parameter = parameterEffect[1];
+          const parameter = parameterEffect;
           setParameter(parameter);
 
           if (parameter === "PM10" || parameter === "PM2.5") {
@@ -104,22 +137,25 @@ const ResultAirQuality = ({ route }) => {
           }
         }
       }
-      saveToFirestore()
+
+      saveToFirestore();
     };
     runCode();
   }, [aqiData]);
 
-  const saveToFirestore=async()=>{
-    const user=auth.currentUser
-    try{
-      const userDocRef=doc(db,"users",user.uid)
-      const aqicollection=collection(userDocRef,"aqi")
-      const aqidoc=await addDoc(aqicollection,aqiData)
-    }catch(e){
-      console.log(e)
+  const saveToFirestore = async () => {
+    const user = auth.currentUser;
+    try {
+      const userDocRef = doc(db, "users", user.uid);
+      const aqicollection = collection(userDocRef, "aqi");
+      const aqidoc = await addDoc(aqicollection, aqiData);
+    } catch (e) {
+      console.log(e);
     }
-  }
-
+  };
+  useEffect(() => {
+    console.log(calendar);
+  }, [calendar]);
   const postDataToServer = async (latitude, longitude) => {
     try {
       const response = await fetch(
@@ -134,7 +170,6 @@ const ResultAirQuality = ({ route }) => {
       );
       if (response.status == 200) {
         const data = await response.json();
-        console.log(data);
         setAqiData(data);
       } else {
         Alert.alert("", "Error loading data");
@@ -147,9 +182,12 @@ const ResultAirQuality = ({ route }) => {
   if (aqiData == null) {
     return <RotatingImage small={false} />;
   }
-
+  const handleDatePicker = (event, selectedDate) => {
+    if (selectedDate !== undefined) {
+      setCalendar(selectedDate);
+    }
+  };
   return (
-    
     <View style={tw`w-full h-full flex-1`}>
       <ImageBackground
         source={require("../../../assets/Homebg.jpg")}
@@ -177,99 +215,118 @@ const ResultAirQuality = ({ route }) => {
               Air Quality Index
             </Text>
           </View>
-          <View style={tw` h-50 m-4 rounded-xl`}>
-            {aqiData && (
-              <MapView
-                mapType="standard"
-                zoomEnabled={true}
-                loadingEnabled
-                scrollEnabled={true}
-                showsScale={true}
-                region={{
-                  latitude: location?.coords?.latitude || 0,
-                  latitudeDelta: LATITUDE_DELTA,
-                  longitude: location?.coords?.longitude || 0,
-                  longitudeDelta: LONGITUDE_DELTA,
-                }}
-                style={tw`w-full h-full rounded-3xl`}
-              >
-                <Marker
-                  coordinate={{
-                    latitude: location.coords.latitude,
-                    longitude: location.coords.longitude,
-                  }}
-                  title="You are here"
-                />
-                <Circle
-                  center={location.coords}
-                  radius={5000}
-                  fillColor={color}
-                />
-              </MapView>
-            )}
-          </View>
-          {aqiData && (
+          <ScrollView>
             <View>
-              <View style={tw`flex-col items-center m-2`}>
-                <Text style={tw`text-2xl font-bold`}>
-                  The Air Quality Index in your region is:
-                </Text>
-                <View style={tw`flex-row items-center`}>
-                  <Text style={[tw`text-2xl font-bold text-blue-700 mt-4`]}>
-                    {aqiData["predictedresult"]}
-                  </Text>
-                  <Text style={[tw`text-2xl font-bold ml-4 mt-4`, { color: color }]}>
-                    {intense}
-                  </Text>
+              <View style={tw` h-50 m-4 rounded-xl`}>
+                {aqiData && (
+                  <MapView
+                    mapType="standard"
+                    zoomEnabled={true}
+                    loadingEnabled
+                    scrollEnabled={true}
+                    showsScale={true}
+                    region={{
+                      latitude: location?.coords?.latitude || 0,
+                      latitudeDelta: LATITUDE_DELTA,
+                      longitude: location?.coords?.longitude || 0,
+                      longitudeDelta: LONGITUDE_DELTA,
+                    }}
+                    style={tw`w-full h-full rounded-3xl`}
+                  >
+                    <Marker
+                      coordinate={{
+                        latitude: location.coords.latitude,
+                        longitude: location.coords.longitude,
+                      }}
+                      title="You are here"
+                    />
+                    <Circle
+                      center={location.coords}
+                      radius={5000}
+                      fillColor={color}
+                    />
+                  </MapView>
+                )}
+              </View>
+              {aqiData && (
+                <View style={tw`flex-col ml-5`}>
+                  <View style={tw`w-full`}>
+                    {dataloaded && aqiData ? (
+                      <PollutionPieChart datapollution={aqiData} />
+                    ) : (
+                      <></>
+                    )}
+                  </View>
+                  <View style={tw`flex-col`}>
+                    <Text style={tw`text-lg font-bold`}>
+                      The Air Quality Index in your region is:
+                    </Text>
+                    <View style={tw`flex-row`}>
+                      <Text style={[tw`text-2xl font-bold text-blue-700 mt-4`]}>
+                        {aqiData["predicted_aqi"]}
+                      </Text>
+                      <Text
+                        style={[
+                          tw`text-2xl font-bold ml-4 mt-4`,
+                          { color: color },
+                        ]}
+                      >
+                        {intense}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={tw`flex-col mt-4`}>
+                    <Text style={tw`text-lg font-bold`}>Impact:</Text>
+                    <View style={tw`flex-row`}>
+                      <Text style={tw`text-2xl font-bold text-blue-700 mt-4`}>
+                        {impacts}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={tw`flex-col mt-4`}>
+                    <Text style={tw`text-lg font-bold`}>
+                      Precautions to take for air:
+                    </Text>
+                    <View style={tw`flex-row`}>
+                      <Text style={tw`text-2xl font-bold text-blue-700 mt-4`}>
+                        {precautionsair}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={tw`flex-col mt-4`}>
+                    <Text style={tw`text-lg font-bold`}>
+                      The Parameter Effecting the most is :
+                    </Text>
+                    <Text style={tw`text-2xl font-bold text-blue-700 mt-4`}>
+                      {maxpol}
+                    </Text>
+                  </View>
+                  <View style={tw`flex-col mt-4`}>
+                    <Text style={tw`text-lg font-bold`}>
+                      The Concentration of {maxpol}:
+                    </Text>
+                    <View style={tw`flex-row`}>
+                      <Text style={tw`text-2xl font-bold text-blue-700 mt-4`}>
+                        {aqiData["pollution_parameters"][maxpol]}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={tw`flex-col items-start mt-4`}>
+                    <Text style={tw`text-lg font-bold`}>Precautions:</Text>
+                    <Text style={tw`text-2xl font-bold text-blue-700`}>
+                      {precautions ? precautions : "No precautions available"}
+                    </Text>
+                  </View>
                 </View>
-              </View>
-              <View style={tw`flex-col  m-2 ml-6`}>
-                <Text style={tw`text-2xl font-bold`}>
-                  Impact:
-                </Text>
-                <View style={tw`flex-row justify-center`}>
-                <Text style={tw`text-3xl font-bold text-blue-700 mt-4`}>
-                  {impacts}
-                </Text>
-                </View>
-              </View>
-              <View style={tw`flex-col  m-2 ml-6`}>
-                <Text style={tw`text-2xl font-bold`}>
-                  Precautions to take for air:
-                </Text>
-                <View style={tw`flex-row justify-center`}>
-                <Text style={tw`text-3xl font-bold text-blue-700 mt-4`}>
-                  {precautionsair}
-                </Text>
-                </View>
-              </View>
-              <View style={tw`flex-col items-center m-2`}>
-                <Text style={tw`text-2xl font-bold`}>
-                  The Parameter Effecting the most is :
-                </Text>
-                <Text style={tw`text-3xl font-bold text-blue-700 mt-4`}>
-                  {aqiData["parameterEffect"][1]}
-                </Text>
-              </View>
-              <View style={tw`flex-col  m-2 ml-6`}>
-                <Text style={tw`text-2xl font-bold`}>
-                  The Concentration of {aqiData["parameterEffect"][1]}:
-                </Text>
-                <View style={tw`flex-row justify-center`}>
-                <Text style={tw`text-3xl font-bold text-blue-700 mt-4`}>
-                  {aqiData["parameterEffect"][0]}
-                </Text>
-                </View>
-              </View>
-              
-              <View style={tw`flex-col items-start m-6`}>
-                <Text style={tw`text-2xl font-bold`}>Precautions:</Text>
-                <Text style={tw`text-2xl font-bold text-blue-700`}>
-                  {precautions ? precautions : "No precautions available"}
-                </Text>
-              </View>
+              )}
             </View>
-          )}
+            <View>
+            <RNDateTimePicker style={tw`mb-34`}mode="date" onChange={handleDatePicker}
+            value={calendar}
+            />
+            </View>
+          </ScrollView>
         </View>
       </ImageBackground>
     </View>

@@ -114,7 +114,7 @@ const ResultWaterQuality = ({ route }) => {
   return (
     <View style={tw`w-full h-full flex-1`}>
       <ImageBackground
-        source={require("C:/Users/Umang/Desktop/SIH 2023/Nireekshanam/assets/Homebg.jpg")}
+        source={require("../../../assets/Homebg.jpg")}
         style={[
           tw`w-full h-full`,
           {
