@@ -24,8 +24,8 @@ export default function Card() {
   }
   
   return (
-    <View style={tw`justify-center flex-col items-center px-4`}>
-  <View style={tw` bg-blue-500 w-full h-25 mt-35 rounded-xl flex-row justify-between  px-4`}>
+    <View style={tw`justify-center flex-col items-center px-4 mr-3`}>
+  <View style={tw` bg-blue-500 w-full h-25 mt-24 rounded-xl flex-row justify-between  px-4`}>
     <View style={tw`flex-col mt-5`}><Text style={tw`text-white text-3xl`}>Hi {user.displayName}</Text>
     <Text style={tw`text-white text-xl`}>{user.email}</Text>
     </View>

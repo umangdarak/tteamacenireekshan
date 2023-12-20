@@ -12,9 +12,8 @@ import tw from "twrnc";
 import "firebase/firestore";
 const { height, width } = Dimensions.get("window");
 import { updateProfile, createUserWithEmailAndPassword } from "firebase/auth";
-import { auth, db } from "../firebaseConfig";
 import { AntDesign } from "@expo/vector-icons";
-
+import { auth } from "../firebaseConfig";
 const Register = ({ navigation }) => {
   //states for text inputs useState hooks
   const [username, setUsername] = useState("");
@@ -26,6 +25,7 @@ const Register = ({ navigation }) => {
   const register = async (username, password, email) => {
     try {
       //creating new user
+      
       const { user } = await createUserWithEmailAndPassword(
         auth,
         email,
@@ -141,7 +141,7 @@ const Register = ({ navigation }) => {
                 </Text>
               }
             </TouchableOpacity>
-            <TouchableOpacity onPress={register}>
+            <TouchableOpacity onPress={handleSignUp}>
               <View
                 style={tw` w-12 h-12 bg-blue-700 rounded-full justify-center items-center `}
               >

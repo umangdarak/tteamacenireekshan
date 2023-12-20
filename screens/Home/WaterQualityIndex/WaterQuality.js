@@ -59,7 +59,7 @@ const WaterQualityIndex = ({ navigation }) => {
 
   const getGeocodeCoordinates = async (cityName) => {
     let { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== "granted") {
+   try{ if (status !== "granted") {
       Alert.alert("", "Couldnt get Location try again");
       return;
     }
@@ -69,7 +69,7 @@ const WaterQualityIndex = ({ navigation }) => {
         latitude: locationgeo[0].latitude,
         longitude: locationgeo[0].longitude,
       },
-    });
+    });}catch(e){}
   };
   const handleCityChange = (text) => {
     setCity(text);

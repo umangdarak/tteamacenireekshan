@@ -23,17 +23,18 @@ const AirQualityIndex = ({ navigation }) => {
   const [city, setCity] = useState("");
 
   useEffect(() => {
-    const fetchlocation = async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert("", "Couldnt get Location try again");
-        return;
-      }
-      let location = await Location.getCurrentPositionAsync({});
-      setLocation(location);
-    };
+    
     fetchlocation();
   }, []);
+  const fetchlocation = async () => {
+    let { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("", "Couldnt get Location try again");
+      return;
+    }
+    let location = await Location.getCurrentPositionAsync({});
+    setLocation(location);
+  };
 
   const getGeocodeCoordinates = async (cityName) => {
     let { status } = await Location.requestForegroundPermissionsAsync();
@@ -51,6 +52,9 @@ const AirQualityIndex = ({ navigation }) => {
   };
   const handleCityChange = (text) => {
     setCity(text);
+    if(text==''){
+      fetchlocation()
+    }
   };
 
   const handleUpdateLocation = () => {
@@ -60,6 +64,7 @@ const AirQualityIndex = ({ navigation }) => {
       console.log(e);
     }
   };
+
 
  
 

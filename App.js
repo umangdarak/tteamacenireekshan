@@ -4,7 +4,7 @@ import Register from './screens/Register';
 import * as React from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
-import { auth } from './firebaseConfig';
+import { auth,db} from './firebaseConfig';
 import RotatingImage from './misc/RotatingScreen';
 import HomeStack from './HomeStack';
 Stack=createNativeStackNavigator()

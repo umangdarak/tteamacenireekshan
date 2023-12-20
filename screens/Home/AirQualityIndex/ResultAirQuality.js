@@ -22,7 +22,6 @@ import RotatingImage from "../../../misc/RotatingScreen";
 import { auth, db } from "../../../firebaseConfig";
 import { collection, doc, addDoc } from "firebase/firestore";
 import PollutionPieChart from "../../../misc/Piechart";
-import RNDateTimePicker from "@react-native-community/datetimepicker";
 
 const ResultAirQuality = ({ route }) => {
   const { location } = route.params;
@@ -37,11 +36,18 @@ const ResultAirQuality = ({ route }) => {
   const [maxpol, setMaxpol] = useState(null);
   const [dataloaded, setDataloaded] = useState(false);
   const [calendar, setCalendar] = useState(new Date());
+  const [farmers,setFarmers]=useState(null);
+  const [precautionfarmers,setPrecautionsFarmers]=useState(null);
+  const [rural,setRural]=useState(null);
+  const [ruralPrecautions,setRuralPrecautions]=useState(null);
 
   useEffect(() => {
     postDataToServer(location.coords.latitude, location.coords.longitude);
     Asset.loadAsync(require("../../../assets/Homebg.jpg"));
   }, []);
+
+  
+
   useEffect(() => {
     console.log(aqiData);
     if (aqiData) {
@@ -110,31 +116,52 @@ const ResultAirQuality = ({ route }) => {
             setPrecautions(
               "These particles, when inhaled, can penetrate deeper into the respiratory system and cause respiratory ailments such as asthma, coughing, sneezing, irritation in the airways, eyes, nose, throat irritation, etc"
             );
+            if(parameter==="PM10"){
+            setFarmers("Air Quality Impact,Crop Damage,Soil Contamination,Visibility and Safety");
+            setPrecautionsFarmers("Emission Reduction Measures,Cover Crops,Dust Control Measures,Respiratory Protection")
+            setRural("Respiratory Health Concerns,Outdoor Worker Exposure,Livestock and Animal Health Impact,Limited Access to Healthcare,Reduced Visibility")
+            setRuralPrecautions("Education and Awareness Programs, Protective Measures for Outdoor Workers, Promotion of Sustainable Practices, Collaboration with Environmental Agencies")
+          }
+            else if(parameter=="PM2.5"){
+              setFarmers("Air Quality Impact,Crop Damage,Soil Contamination,Respiratory Health Concerns,");
+            setPrecautionsFarmers("Vegetative Buffers,Cover Crops,Dust Control Measures,Respiratory Protection,Advocacy for Air Quality Regulations")
+              setRural("Respiratory Health Concerns,Outdoor Worker Exposure,Livestock and Animal Health Impact,Limited Access to Healthcare,Reduced Visibility")
+              setRuralPrecautions("Education and Awareness Programs, Protective Measures for Outdoor Workers, Promotion of Sustainable Practices, Collaboration with Environmental Agencies")
+          }
           } else if (parameter === "CO") {
             setPrecautions(
               "Increase in its concentration causes carbon monoxide poisoning (interference with oxygen-hemoglobin binding) in human beings, chest pain, heart diseases, reduced mental capabilities, vision problems, and contributes to smog formation."
             );
+            setFarmers("Air Quality Impact,Health Concerns for Farm Workers,Greenhouse Gas Emissions,Indoor Air Quality in Farm Buildings,")
+            setPrecautionsFarmers("Regular Maintenance,Proper Ventilation,Use of Clean Energy,Compliance with Regulations")
+            setRural("Indoor Air Pollution,Unsafe Cooking Practices,Heating Systems,Occupational Exposure,Limited Access to Healthcare,Use of Generators")
+            setRuralPrecautions("Education and Awareness Programs,Promotion of Clean Cooking Technologies,Proper Ventilation Practices,Occupational Safety Measures,Emergency Response Training")
           } else if (parameter === "O3") {
             setPrecautions(
               "When ozone is inhaled by humans, reduced lung function, inflammation of airways, and irritation in the eyes, nose & throat are seen"
             );
+            setFarmers("Reduced Crop Yields,Damage to Vegetation,Affects Crop Quality,Impact on Sensitive Crops,Long-Term Impact on Soil Health");
+            setPrecautionsFarmers("Monitor Air Quality,Choose Ozone-Resistant Crop Varieties,Modify Planting Times,Implement Crop Rotation.")
+            setRural("Agricultural Impact,Respiratory Health Concerns,Outdoor Worker Exposure,Limited Access to Healthcare,Impact on Livestock,Water Quality Impact")
+            setRuralPrecautions("Education and Awareness Programs,Protective Measures for Outdoor Workers,Promotion of Sustainable Practices,Collaboration with Environmental Agencies")
           } else if (parameter === "NO2") {
             setPrecautions(
               "Nitrogen dioxide poisoning is as much as hazardous as carbon monoxide poisoning. It is when inhaled can cause serious damage to the heart, absorbed by the lungs, inflammation, and irritation of airways. Smog formation and foliage damage are some environmental impacts of nitrogen dioxide."
             );
+            setFarmers("Livestock Emissions,Ammonia (NH3) Emissions,Combustion Emissions,Respiratory Health Concerns,Crop Damage")
+            setPrecautionsFarmers("Livestock Management,Optimized Fertilizer Application,Cover Crops and Buffer Zones,Alternative Energy Sources,Monitoring and Compliance")
+            setRural("Respiratory Health Concerns,Livestock Health Impact,Water Quality Impact,Limited Access to Healthcare")
+            setRuralPrecautions("Education and Awareness Programs,Protective Measures for Outdoor Workers,Promotion of Sustainable Practices,Collaboration with Environmental Agencies")
+
           } else if (parameter === "SO2") {
             setPrecautions(
               "In humans, it causes breathing discomfort, asthma, eyes, nose, and throat irritation, inflammation of airways, and heart diseases"
             );
-          } else if (parameter === "NH3") {
-            setPrecautions(
-              "Human beings experience immediate eyes, nose, throat, and respiratory tract burning, blindness, and lung damage upon exposure to high levels. It may cause coughing and irritation in the eyes, nose, and throat with low concentration exposure."
-            );
-          } else if (parameter === "NO") {
-            setPrecautions(
-              "Inhalation of high concentrations of nitric oxide can irritate the respiratory tract, leading to coughing, shortness of breath, and throat irritation"
-            );
-          }
+            setFarmers("Industrial Emissions,Acid Rain Formation,Crop Damage,Soil Acidification,Water Contamination")
+            setPrecautionsFarmers("Crop Selection,Crop Rotation and Diversification,Soil Amendments,Monitoring and Early Detection")
+            setRural("Respiratory Health Concerns, Livestock Health Impact, Water Quality Impact, Limited Access to Healthcare")
+            setRuralPrecautions("Education and Awareness Programs, Protective Measures for Outdoor Workers, Promotion of Sustainable Practices, Collaboration with Environmental Agencies")
+          } 
         }
       }
 
@@ -153,9 +180,9 @@ const ResultAirQuality = ({ route }) => {
       console.log(e);
     }
   };
-  useEffect(() => {
-    console.log(calendar);
-  }, [calendar]);
+  // useEffect(() => {
+  //   console.log(calendar);
+  // }, [calendar]);
   const postDataToServer = async (latitude, longitude) => {
     try {
       const response = await fetch(
@@ -262,12 +289,12 @@ const ResultAirQuality = ({ route }) => {
                       The Air Quality Index in your region is:
                     </Text>
                     <View style={tw`flex-row`}>
-                      <Text style={[tw`text-2xl font-bold text-blue-700 mt-4`]}>
+                      <Text style={[tw`text-xl font-bold text-blue-700 mt-4`]}>
                         {aqiData["predicted_aqi"]}
                       </Text>
                       <Text
                         style={[
-                          tw`text-2xl font-bold ml-4 mt-4`,
+                          tw`text-xl font-bold ml-4 mt-4`,
                           { color: color },
                         ]}
                       >
@@ -311,21 +338,40 @@ const ResultAirQuality = ({ route }) => {
                       </Text>
                     </View>
                   </View>
-
                   <View style={tw`flex-col items-start mt-4`}>
                     <Text style={tw`text-lg font-bold`}>Precautions:</Text>
-                    <Text style={tw`text-2xl font-bold text-blue-700`}>
+                    <Text style={tw`text-xl font-bold text-blue-700`}>
                       {precautions ? precautions : "No precautions available"}
+                    </Text>
+                  </View>
+                  <View style={tw`flex-col items-start mt-4`}>
+                    <Text style={tw`text-lg font-bold`}>Problems faced by farmers:</Text>
+                    <Text style={tw`text-xl font-bold text-blue-700`}>
+                      {farmers ? farmers : "No precautions available"}
+                    </Text>
+                  </View>
+                  <View style={tw`flex-col items-start mt-4 `}>
+                    <Text style={tw`text-lg font-bold`}>Precautions that can be taken by the Farmers:</Text>
+                    <Text style={tw`text-xl font-bold text-blue-700`}>
+                      {precautionfarmers ? precautionfarmers : "No precautions available"}
+                    </Text>
+                  </View>
+                  <View style={tw`flex-col items-start mt-4 `}>
+                    <Text style={tw`text-lg font-bold`}>Problems faced by rural people:</Text>
+                    <Text style={tw`text-xl font-bold text-blue-700`}>
+                      {rural ? rural : "No precautions available"}
+                    </Text>
+                  </View>
+                  <View style={tw`flex-col items-start mt-4 mb-18`}>
+                    <Text style={tw`text-lg font-bold`}>Precautions that can be taken by the rural people:</Text>
+                    <Text style={tw`text-xl font-bold text-blue-700`}>
+                      {ruralPrecautions ? ruralPrecautions : "No precautions available"}
                     </Text>
                   </View>
                 </View>
               )}
             </View>
-            <View>
-            <RNDateTimePicker style={tw`mb-34`}mode="date" onChange={handleDatePicker}
-            value={calendar}
-            />
-            </View>
+            
           </ScrollView>
         </View>
       </ImageBackground>
